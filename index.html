@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleet Register</title>
+<style>
+  :root {
+    --ink: #14181d;
+    --panel: #ffffff;
+    --bg: #eceae4;
+    --line: #d6d3ca;
+    --muted: #6d7078;
+    --accent: #1f5f4e;
+    --accent-soft: #e2efe9;
+    --warn: #b4521c;
+    --warn-soft: #f6e6dc;
+    --danger: #a3282a;
+    --danger-soft: #f6dedd;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(20,24,29,.06), 0 8px 24px rgba(20,24,29,.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--ink);
+    color: #fff;
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+  }
+  .brand span {
+    font-size: 12px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #9aa0a8;
+  }
+  .stats { display: flex; gap: 26px; }
+  .stat .n { font-size: 22px; font-weight: 700; line-height: 1; }
+  .stat .l { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: #9aa0a8; margin-top: 3px; }
+  .stat .n.alert { color: #ff8a5c; }
+
+  .toolbar {
+    max-width: 1180px;
+    margin: 26px auto 0;
+    padding: 0 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+  .search input {
+    width: 100%;
+    padding: 11px 14px 11px 38px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .search input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+  select {
+    padding: 11px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .add-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 11px 18px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .add-btn:hover { background: #1a5142; }
+  .add-btn .plus { font-size: 18px; line-height: 1; }
+
+  main { max-width: 1180px; margin: 20px auto 60px; padding: 0 24px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+    position: relative;
+  }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+  .card-title h3 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+  .card-title .plate {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    background: var(--ink);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+  .card-actions { display: flex; gap: 4px; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    padding: 5px; border-radius: 6px; line-height: 0;
+  }
+  .icon-btn:hover { background: var(--bg); color: var(--ink); }
+
+  .rows { display: flex; flex-direction: column; gap: 0; }
+  .row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-top: 1px solid var(--line); font-size: 13.5px;
+  }
+  .row:first-child { border-top: none; }
+  .row .k { color: var(--muted); }
+  .row .v { font-weight: 600; text-align: right; }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  .tag.ok { background: var(--accent-soft); color: var(--accent); }
+  .tag.soon { background: var(--warn-soft); color: var(--warn); }
+  .tag.over { background: var(--danger-soft); color: var(--danger); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .empty {
+    text-align: center; padding: 70px 20px; color: var(--muted);
+    border: 1.5px dashed var(--line); border-radius: var(--radius); background: var(--panel);
+  }
+  .empty h2 { color: var(--ink); font-size: 18px; margin-bottom: 8px; font-weight: 700; }
+  .empty button { margin-top: 16px; }
+
+  /* Modal */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(20,24,29,.5);
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 40px 16px; overflow-y: auto; z-index: 50;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--panel); border-radius: 14px; width: 100%; max-width: 540px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  }
+  .modal-head {
+    padding: 20px 24px; border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-head h2 { font-size: 18px; font-weight: 700; }
+  .modal-body { padding: 20px 24px; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .field label .hint { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); opacity: .75; }
+  .field input, .field textarea {
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: var(--panel);
+  }
+  .field input:focus, .field textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .modal-foot {
+    padding: 16px 24px; border-top: 1px solid var(--line);
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+  .btn-ghost {
+    background: none; border: 1px solid var(--line); padding: 10px 18px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btn-ghost:hover { background: var(--bg); }
+  .btn-primary {
+    background: var(--accent); color: #fff; border: none; padding: 10px 20px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btn-primary:hover { background: #1a5142; }
+
+  .loading { text-align: center; padding: 60px; color: var(--muted); }
+  .banner {
+    max-width: 1180px; margin: 16px auto 0; padding: 12px 16px;
+    background: var(--danger-soft); color: var(--danger); border-radius: var(--radius);
+    font-size: 13.5px; font-weight: 600; display: none;
+  }
+  .banner.show { display: block; }
+  .btn-export {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    padding: 11px 16px; border-radius: var(--radius); font-size: 14px;
+    font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap;
+  }
+  .btn-export:hover { background: #f5f3ee; }
+  .saving { font-size: 13px; color: var(--muted); }
+
+  @media (max-width: 560px) {
+    .field-grid { grid-template-columns: 1fr; }
+    .stats { gap: 18px; }
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>Fleet Register</h1>
+    <span>Service &amp; Compliance</span>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Vehicles</div></div>
+    <div class="stat"><div class="n alert" id="statDue">0</div><div class="l">Need attention</div></div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="searchInput" type="text" placeholder="Search by name, plate or make…">
+  </div>
+  <select id="filterSelect">
+    <option value="all">All vehicles</option>
+    <option value="attention">Needs attention</option>
+    <option value="ok">All good</option>
+  </select>
+  <button class="btn-export" id="exportBtn">Export CSV</button>
+  <button class="add-btn" id="addBtn"><span class="plus">+</span> Add car</button>
+</div>
+
+<div class="banner" id="banner"></div>
+
+<main>
+  <div id="loading" class="loading">Loading your fleet…</div>
+  <div id="grid" class="grid" style="display:none"></div>
+  <div id="empty" class="empty" style="display:none">
+    <h2>No vehicles yet</h2>
+    <p>Add your first car to start tracking service dates, registration and mileage.</p>
+    <button class="add-btn" id="emptyAdd" style="margin:16px auto 0"><span class="plus">+</span> Add your first car</button>
+  </div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Add a car</h2>
+      <button class="icon-btn" id="closeModal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field-grid">
+        <div class="field"><label>Name / Nickname</label><input id="f_name" placeholder="e.g. Toyota Hilux 1"></div>
+        <div class="field"><label>Registration plate</label><input id="f_plate" placeholder="e.g. CA 123-456"></div>
+        <div class="field"><label>Make</label><input id="f_make" placeholder="Toyota"></div>
+        <div class="field"><label>Model</label><input id="f_model" placeholder="Hilux 2.4"></div>
+        <div class="field"><label>Year</label><input id="f_year" placeholder="2021"></div>
+        <div class="field"><label>Current KM reading <span class="hint">+/- 3000</span></label><input id="f_km" placeholder="128 500"></div>
+        <div class="field"><label>Last serviced</label><input id="f_serviced" type="date"></div>
+        <div class="field"><label>Next service due</label><input id="f_nextservice" type="date"></div>
+        <div class="field"><label>Registration expiry</label><input id="f_regexp" type="date"></div>
+        <div class="field full"><label>Notes</label><textarea id="f_notes" placeholder="Anything else worth remembering…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="cancelBtn">Cancel</button>
+      <button class="btn-primary" id="saveBtn">Save car</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- Supabase connection ----
+  const SUPABASE_URL = "https://sgxwljxkobkrrhalmyaw.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNneHdsanhrb2JrcnJoYWxteWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODA5ODAsImV4cCI6MjEwMDQ1Njk4MH0.zMzxEYvZh9X0WZoNrVDYxV3IZlrrfN2ZQ84KwTceHhk";
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let cars = [];
+  let editingId = null;
+
+  const $ = id => document.getElementById(id);
+
+  function showError(msg) {
+    const b = $("banner");
+    b.textContent = msg;
+    b.classList.add("show");
+  }
+  function clearError() { $("banner").classList.remove("show"); }
+
+  // Dates come back from Postgres as "YYYY-MM-DD" or null; inputs want "" for empty
+  function toInput(v) { return v ? String(v).slice(0, 10) : ""; }
+  function toDb(v) { return v ? v : null; }
+
+  async function loadCars() {
+    try {
+      const { data, error } = await db.from("cars").select("*");
+      if (error) throw error;
+      cars = (data || []).map(r => ({
+        id: r.id, name: r.name || "", plate: r.plate || "",
+        make: r.make || "", model: r.model || "", year: r.year || "",
+        km: r.km || "", serviced: toInput(r.serviced),
+        nextservice: toInput(r.nextservice), regexp: toInput(r.regexp),
+        notes: r.notes || ""
+      }));
+      clearError();
+    } catch (e) {
+      console.error("Load failed", e);
+      showError("Could not load the fleet. Check your connection and refresh.");
+      cars = [];
+    }
+    cars.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    $("loading").style.display = "none";
+    render();
+  }
+
+  function daysUntil(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + "T00:00:00");
+    const now = new Date(); now.setHours(0,0,0,0);
+    return Math.round((d - now) / 86400000);
+  }
+
+  function statusOf(car) {
+    const dates = [car.regexp, car.nextservice].map(daysUntil).filter(v => v !== null);
+    if (dates.length === 0) return "ok";
+    const min = Math.min(...dates);
+    if (min < 0) return "over";
+    if (min <= 30) return "soon";
+    return "ok";
+  }
+
+  function fmtDate(s) {
+    if (!s) return "\u2014";
+    const d = new Date(s + "T00:00:00");
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  }
+
+  function dateRow(label, val) {
+    const dl = daysUntil(val);
+    let tag = "";
+    if (val) {
+      if (dl < 0) tag = `<span class="tag over"><span class="dot"></span>${Math.abs(dl)}d overdue</span>`;
+      else if (dl <= 30) tag = `<span class="tag soon"><span class="dot"></span>${dl}d left</span>`;
+      else tag = `<span class="tag ok"><span class="dot"></span>ok</span>`;
+    }
+    return `<div class="row"><span class="k">${label}</span><span class="v">${fmtDate(val)} ${tag}</span></div>`;
+  }
+
+  function render() {
+    const q = $("searchInput").value.trim().toLowerCase();
+    const filter = $("filterSelect").value;
+    let list = cars.slice();
+
+    if (q) list = list.filter(c =>
+      [c.name, c.plate, c.make, c.model].some(v => (v || "").toLowerCase().includes(q)));
+    if (filter === "attention") list = list.filter(c => statusOf(c) !== "ok");
+    if (filter === "ok") list = list.filter(c => statusOf(c) === "ok");
+
+    $("statTotal").textContent = cars.length;
+    $("statDue").textContent = cars.filter(c => statusOf(c) !== "ok").length;
+
+    const grid = $("grid");
+    if (cars.length === 0) {
+      grid.style.display = "none";
+      $("empty").style.display = "block";
+      return;
+    }
+    $("empty").style.display = "none";
+    grid.style.display = "grid";
+
+    grid.innerHTML = list.map(c => {
+      const km = c.km ? Number(String(c.km).replace(/\D/g,"")).toLocaleString("en-GB") : "\u2014";
+      const sub = [c.make, c.model, c.year].filter(Boolean).join(" ");
+      return `<div class="card">
+        <div class="card-top">
+          <div class="card-title">
+            <h3>${esc(c.name) || "Unnamed vehicle"}</h3>
+            ${c.plate ? `<span class="plate">${esc(c.plate)}</span>` : ""}
+          </div>
+          <div class="card-actions">
+            <button class="icon-btn" title="Edit" onclick="editCar('${c.id}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+            <button class="icon-btn" title="Delete" onclick="deleteCar('${c.id}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+          </div>
+        </div>
+        ${sub ? `<div class="row" style="padding-top:0"><span class="k">Vehicle</span><span class="v">${esc(sub)}</span></div>` : ""}
+        <div class="rows">
+          <div class="row"><span class="k">Current KM</span><span class="v">${km}${c.km ? ' <span style="font-weight:400;color:var(--muted)">+/- 3000</span>' : ""}</span></div>
+          <div class="row"><span class="k">Last serviced</span><span class="v">${fmtDate(c.serviced)}</span></div>
+          ${dateRow("Next service", c.nextservice)}
+          ${dateRow("Registration", c.regexp)}
+          ${c.notes ? `<div class="row"><span class="k">Notes</span><span class="v" style="font-weight:400;max-width:60%">${esc(c.notes)}</span></div>` : ""}
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function esc(s) { return (s == null ? "" : String(s)).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  function openModal(car) {
+    editingId = car ? car.id : null;
+    $("modalTitle").textContent = car ? "Edit car" : "Add a car";
+    const g = f => car ? (car[f] || "") : "";
+    $("f_name").value = g("name"); $("f_plate").value = g("plate");
+    $("f_make").value = g("make"); $("f_model").value = g("model");
+    $("f_year").value = g("year"); $("f_km").value = g("km");
+    $("f_serviced").value = g("serviced"); $("f_nextservice").value = g("nextservice");
+    $("f_regexp").value = g("regexp");
+    $("f_notes").value = g("notes");
+    $("overlay").classList.add("open");
+  }
+  function closeModal() { $("overlay").classList.remove("open"); editingId = null; }
+
+  async function saveCar() {
+    const btn = $("saveBtn");
+    const car = {
+      id: editingId || ("v" + Date.now() + Math.floor(Math.random()*1000)),
+      name: $("f_name").value.trim(), plate: $("f_plate").value.trim(),
+      make: $("f_make").value.trim(), model: $("f_model").value.trim(),
+      year: $("f_year").value.trim(), km: $("f_km").value.trim(),
+      serviced: $("f_serviced").value, nextservice: $("f_nextservice").value,
+      regexp: $("f_regexp").value,
+      notes: $("f_notes").value.trim()
+    };
+    if (!car.name && !car.plate) { alert("Give the car at least a name or a plate."); return; }
+
+    btn.disabled = true; btn.textContent = "Saving\u2026";
+    try {
+      const row = Object.assign({}, car, {
+        serviced: toDb(car.serviced),
+        nextservice: toDb(car.nextservice),
+        regexp: toDb(car.regexp)
+      });
+      const { error } = await db.from("cars").upsert(row);
+      if (error) throw error;
+      clearError();
+    } catch (e) {
+      console.error("Save failed", e);
+      alert("Could not save that car. Check your connection and try again.");
+      btn.disabled = false; btn.textContent = "Save car";
+      return;
+    }
+    btn.disabled = false; btn.textContent = "Save car";
+
+    const idx = cars.findIndex(c => c.id === car.id);
+    if (idx >= 0) cars[idx] = car; else cars.push(car);
+    cars.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    closeModal(); render();
+  }
+
+  window.editCar = id => { const c = cars.find(x => x.id === id); if (c) openModal(c); };
+  window.deleteCar = async id => {
+    const c = cars.find(x => x.id === id);
+    if (!confirm(`Delete ${c && c.name ? c.name : "this car"}? This removes it for everyone and can't be undone.`)) return;
+    try {
+      const { error } = await db.from("cars").delete().eq("id", id);
+      if (error) throw error;
+      clearError();
+    } catch (e) {
+      console.error("Delete failed", e);
+      alert("Could not delete that car. Check your connection and try again.");
+      return;
+    }
+    cars = cars.filter(x => x.id !== id); render();
+  };
+
+  function exportCsv() {
+    if (cars.length === 0) { alert("No cars to export yet."); return; }
+    const cols = ["name","plate","make","model","year","km","serviced","nextservice","regexp","notes"];
+    const heads = ["Name","Plate","Make","Model","Year","Current KM","Last serviced","Next service due","Registration expiry","Notes"];
+    const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+    const rows = [heads.map(q).join(",")].concat(
+      cars.map(c => cols.map(k => q(c[k])).join(","))
+    );
+    const blob = new Blob(["\uFEFF" + rows.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "fleet-" + new Date().toISOString().slice(0,10) + ".csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  $("addBtn").onclick = () => openModal(null);
+  $("emptyAdd").onclick = () => openModal(null);
+  $("closeModal").onclick = closeModal;
+  $("cancelBtn").onclick = closeModal;
+  $("saveBtn").onclick = saveCar;
+  $("exportBtn").onclick = exportCsv;
+  $("searchInput").oninput = render;
+  $("filterSelect").onchange = render;
+  $("overlay").onclick = e => { if (e.target === $("overlay")) closeModal(); };
+
+  // Refresh when the tab regains focus, so you see others' changes
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) loadCars();
+  });
+
+  loadCars();
+</script>
+</body>
+</html>
